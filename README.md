@@ -2,7 +2,7 @@
 
 *Jika Transfer Gagal:*
 rsync -avz -e ssh root@IP_LAMA:/root/backup.tar.gz /
-rsync -avz -e ssh root@IP_LAMA:/root/node.tar.gz //n/
+rsync -avz -e ssh root@IP_LAMA:/root/node.tar.gz /
 
 *Jika IP Tidak Update:*
 mysql -u root -p
