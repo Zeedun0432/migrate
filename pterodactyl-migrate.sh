@@ -3,6 +3,10 @@
 # ========================================
 # PTERODACTYL MIGRATION SCRIPT - PLUG N PLAY
 # Sekali klik langsung jadi tanpa setting manual!
+# 
+# CARA PENGGUNAAN:
+# 1. VPS LAMA: bash migrate.sh (pilih opsi 1)
+# 2. VPS BARU: bash migrate.sh (pilih opsi 2)
 # ========================================
 
 # Colors for output
@@ -18,6 +22,7 @@ NC='\033[0m' # No Color
 echo -e "${PURPLE}"
 echo "==========================================="
 echo "   PTERODACTYL MIGRATION SCRIPT v1.0"
+echo "        Script by zeedun"
 echo "   Sekali Klik Langsung Plug N Play!"
 echo "==========================================="
 echo -e "${NC}"
@@ -45,14 +50,9 @@ if [[ $EUID -ne 0 ]]; then
    error "Script ini harus dijalankan sebagai root!"
 fi
 
-# Cek syarat work
-echo -e "${PURPLE}Sebelum mulai, bilang 'chiwa kawaii' dulu >\\< mwehehe${NC}"
-read -p "Ketik 'chiwa kawaii' untuk melanjutkan: " chiwa_check
-if [[ "$chiwa_check" != "chiwa kawaii" ]]; then
-    error "Ga bilang chiwa kawaii, ga work :3"
-fi
-
-echo -e "${GREEN}Chiwa kawaii! Script siap bekerja~ >\\<${NC}"
+# Tampilkan info
+echo -e "${PURPLE}Script migration by zeedun${NC}"
+echo -e "${GREEN}Ready to migrate Pterodactyl Panel & Node!${NC}"
 
 # Menu utama
 echo -e "${BLUE}"
@@ -85,12 +85,37 @@ case $mode in
         log "Backup selesai! File tersimpan di:"
         echo -e "${GREEN}  - /backup.tar.gz (Panel + Database)${NC}"
         echo -e "${GREEN}  - /node.tar.gz (Node)${NC}"
-        echo -e "${YELLOW}Transfer kedua file ini ke VPS baru!${NC}"
         
-        # Generate transfer command
-        read -p "Masukkan IP VPS baru: " new_ip
-        echo -e "${CYAN}Jalankan command ini di VPS baru:${NC}"
-        echo "scp root@$(hostname -I | awk '{print $1}'):/root/{backup.tar.gz,node.tar.gz} /"
+        # Auto transfer option
+        echo -e "${YELLOW}Mau auto-transfer ke VPS baru? (y/N)${NC}"
+        read -p "Transfer otomatis: " auto_transfer
+        
+        if [[ "$auto_transfer" =~ ^[Yy]$ ]]; then
+            read -p "Masukkan IP VPS baru: " new_ip
+            read -p "Masukkan port SSH VPS baru (default 22): " ssh_port
+            ssh_port=${ssh_port:-22}
+            
+            log "Auto-transfer files ke VPS baru..."
+            
+            # Transfer backup files
+            info "Transfer backup.tar.gz..."
+            scp -P $ssh_port /backup.tar.gz root@$new_ip:/ || error "Gagal transfer backup.tar.gz!"
+            
+            info "Transfer node.tar.gz..."
+            scp -P $ssh_port /node.tar.gz root@$new_ip:/ || error "Gagal transfer node.tar.gz!"
+            
+            info "Transfer script migrate.sh..."
+            scp -P $ssh_port $0 root@$new_ip:/migrate.sh || error "Gagal transfer script!"
+            
+            log "Transfer selesai! Sekarang login ke VPS baru dan jalankan:"
+            echo -e "${GREEN}ssh root@$new_ip${NC}"
+            echo -e "${GREEN}chmod +x /migrate.sh${NC}"
+            echo -e "${GREEN}./migrate.sh${NC}"
+            echo -e "${GREEN}Pilih opsi 2 (RESTORE)${NC}"
+        else
+            echo -e "${CYAN}Manual transfer command:${NC}"
+            echo "scp root@$(hostname -I | awk '{print $1}'):/root/{backup.tar.gz,node.tar.gz} /"
+        fi
         ;;
         
     2)
@@ -197,7 +222,7 @@ rm -f /alldb.sql 2>/dev/null || true
 echo -e "${PURPLE}"
 echo "==========================================="
 echo "       SCRIPT SELESAI DIJALANKAN!"
-echo "      Makasih udah pake script ini >_<"
+echo "       Script migration by zeedun"
 echo "==========================================="
 echo -e "${NC}"
 
